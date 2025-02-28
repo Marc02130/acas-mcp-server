@@ -1,5 +1,17 @@
 {
+  "name": "mcp-server",
+  "version": "1.0.0",
+  "description": "Microchemistry Processing Server for ACAS",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node node_modules/.bin/jest",
+    "test:watch": "node node_modules/.bin/jest --watch",
+    "test:coverage": "node node_modules/.bin/jest --coverage"
+  },
   "dependencies": {
+    "axios": "^1.6.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "eslint": "^9.21.0",
@@ -14,5 +26,11 @@
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.21.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
   }
 }

@@ -1,33 +1,46 @@
-.Rproj.user
-*.Rproj
-.Rhistory
-.RData
-!.RData
-ACAS.Rproj
-acas-host3.Rproj
-.Rapp.history
-Gruntfile.js
-.idea/*
-conf/compiled/*
-r_libs
-acas_custom
+# Node.js specific
 node_modules
-privateUploads
-privateTempFiles
-acas.log
-racas.log
-public/src/conf/conf.js
-bin/*.pid
-bin/mpm-accept.*
-bin/rewrite-map.*
-Dockerfile*
-docker-compose*.yml
-build
-licenses
-venv
-#this is for the soft link in .dockerfile (git ignore .git by default)
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.npm
+.yarn
+
+# Runtime data
+logs
+*.log
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Testing and coverage
+coverage
+.nyc_output
+
+# Development tools
 .git
-chemaxon
-.chemaxon
+.gitignore
 .vscode
-conf.*
+.idea
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build artifacts
+dist
+build
+*.tsbuildinfo
+
+# Documentation
+docs
+*.md
+!README.md
+!API.md
