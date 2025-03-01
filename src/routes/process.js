@@ -5,50 +5,124 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const openaiService = require('../services/openai-service');
+const { getAcasFilePath } = require('../utils/file-utils');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Store files in a uploads directory with a subdirectory for each job
+    const jobId = uuidv4();
+    req.jobId = jobId;
+    
+    const uploadDir = path.join(__dirname, '../../uploads', jobId);
+    
+    // Create directory if it doesn't exist
+    fs.mkdirSync(uploadDir, { recursive: true });
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Keep original filename but make it safe
+    const fileName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+    cb(null, fileName);
+  }
+});
+
+// File filter to validate acceptable file types
+const fileFilter = (req, file, cb) => {
+  // Accept csv, excel, and common raw data formats
+  const allowedTypes = [
+    // CSV and Excel formats
+    'text/csv',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    // Text formats
+    'text/plain',
+    'text/tab-separated-values',
+    // Binary formats (common raw data)
+    'application/octet-stream'
+  ];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type not allowed. Accepted types: ${allowedTypes.join(', ')}`), false);
+  }
+};
+
+// Set up multer middleware
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 5 // Maximum 5 files per upload
+  }
+});
 
 // Store jobs in memory (use a database in production)
 const jobs = {};
 
-// Process raw data and convert to ISA-Tab
-router.post('/raw-data', authenticate({ requiredRoles: ['ROLE_FILE_PROCESSOR'] }), async (req, res) => {
+/**
+ * Upload file(s) for processing
+ * POST /api/v1/process/upload
+ */
+router.post('/upload', authenticate(), upload.array('files', 5), async (req, res) => {
   try {
-    const { fileName, fileContent, experimentId, protocolId } = req.body;
+    // Get uploaded files
+    const files = req.files;
     
-    if (!fileName || !fileContent) {
+    if (!files || files.length === 0) {
       return res.status(400).json({
         error: true,
-        message: 'fileName and fileContent are required'
+        message: 'No files uploaded'
       });
     }
     
-    // Create a job ID
-    const jobId = uuidv4();
+    // Get metadata from request body
+    const { experimentId, protocolId, description } = req.body;
     
-    // Store job info
+    // Create job information
+    const jobId = req.jobId; // Set by multer
     jobs[jobId] = {
       id: jobId,
       status: 'pending',
-      fileName,
-      experimentId,
-      protocolId,
+      files: files.map(file => ({
+        originalName: file.originalname,
+        filename: file.filename,
+        path: file.path,
+        size: file.size,
+        mimeType: file.mimetype
+      })),
+      metadata: {
+        experimentId,
+        protocolId,
+        description
+      },
       createdAt: new Date().toISOString(),
       createdBy: req.user.name || req.user.username || 'system'
     };
     
-    // Process asynchronously
-    processDataAsync(jobId, fileContent, fileName, experimentId, protocolId);
+    // Process the job asynchronously
+    // This will be replaced with Bull queue
+    processJob(jobId);
     
-    // Return job ID
+    // Return job ID and status
     res.status(202).json({
       jobId,
       status: 'pending',
-      message: 'File received and processing started'
+      message: 'Files uploaded and processing started',
+      files: files.map(file => file.originalname)
     });
   } catch (error) {
-    console.error('Error processing raw data:', error);
+    console.error('Error processing file upload:', error);
     res.status(500).json({
       error: true,
-      message: 'Error processing raw data',
+      message: 'Error processing file upload',
       details: error.message
     });
   }
@@ -68,33 +142,31 @@ router.get('/jobs/:jobId', authenticate(), async (req, res) => {
   res.json(jobs[jobId]);
 });
 
-// Process data asynchronously
-async function processDataAsync(jobId, fileContent, fileName, experimentId, protocolId) {
+// Process job asynchronously
+async function processJob(jobId) {
   try {
     // Update job status
     jobs[jobId].status = 'processing';
     
-    // Decode base64 content
-    const buffer = Buffer.from(fileContent, 'base64');
+    // Use OpenAI service to generate ISA-Tab
+    const result = await openaiService.generateISATab(jobs[jobId]);
     
-    // TODO: Implement actual processing logic here
-    // This would include:
-    // 1. Parse the raw data
-    // 2. Process using RAG with protocol context
-    // 3. Generate ISA-Tab files
-    // 4. Store or send to ACAS/roo
-    
-    // Simulate processing with a delay
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    // Update job with success
-    jobs[jobId].status = 'completed';
-    jobs[jobId].completedAt = new Date().toISOString();
-    jobs[jobId].result = {
-      message: 'Processing completed successfully',
-      isatabFile: 'base64-encoded-content-would-go-here',
-      // More result details would go here
-    };
+    if (result.success) {
+      // Update job with success
+      jobs[jobId].status = 'completed';
+      jobs[jobId].completedAt = new Date().toISOString();
+      jobs[jobId].result = {
+        message: 'Processing completed successfully',
+        isaTabFiles: result.files.map(file => ({
+          filename: file.filename,
+          path: getAcasFilePath(file.path) // Convert to ACAS-friendly path
+        })),
+        // Store raw response for debugging
+        rawResponse: result.rawResponse
+      };
+    } else {
+      throw new Error(result.error || 'Unknown error during ISA-Tab generation');
+    }
   } catch (error) {
     console.error(`Error processing job ${jobId}:`, error);
     

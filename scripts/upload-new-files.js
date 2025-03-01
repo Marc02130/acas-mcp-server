@@ -10,7 +10,7 @@ const glob = require('glob');
 
 // Configuration
 const WATCH_DIR = process.env.WATCH_DIR || '/path/to/raw/data/directory';
-const MCP_URL = process.env.MCP_URL || 'http://mcp:3002/api';
+const MCP_URL = process.env.MCP_URL || 'http://localhost:3002/api/v1';
 const API_TOKEN = process.env.API_TOKEN || 'cron-job-token';
 const PROCESSED_MARKER = '.processed';
 

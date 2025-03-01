@@ -5,6 +5,7 @@ const request = require('supertest');
 const app = require('../src/index');
 
 describe('Health Check API', () => {
+  // Test the legacy (non-versioned) endpoint
   it('GET /api/health should return status 200 and correct data structure', async () => {
     const response = await request(app).get('/api/health');
     
@@ -22,6 +23,28 @@ describe('Health Check API', () => {
     // Check values
     expect(response.body.status).toBe('ok');
     expect(typeof response.body.uptime).toBe('number');
+  });
+  
+  // Test the versioned endpoint
+  it('GET /api/v1/health should return status 200 and correct data structure with version', async () => {
+    const response = await request(app).get('/api/v1/health');
+    
+    // Check status code
+    expect(response.statusCode).toBe(200);
+    
+    // Check content type
+    expect(response.headers['content-type']).toMatch(/json/);
+    
+    // Check structure
+    expect(response.body).toHaveProperty('status');
+    expect(response.body).toHaveProperty('timestamp');
+    expect(response.body).toHaveProperty('uptime');
+    expect(response.body).toHaveProperty('version');
+    
+    // Check values
+    expect(response.body.status).toBe('ok');
+    expect(typeof response.body.uptime).toBe('number');
+    expect(response.body.version).toBe('v1');
   });
 });
 

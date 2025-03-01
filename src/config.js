@@ -1,41 +1,38 @@
-// MCP Server configuration
-const dotenv = require('dotenv');
+/**
+ * Configuration management module
+ */
+require('dotenv').config();
 
-// Load environment variables from .env file
-dotenv.config();
-
-// Define config object with defaults and environment variable overrides
 const config = {
   // Server configuration
   port: process.env.PORT || 3002,
-  nodeEnv: process.env.NODE_ENV || 'development',
   
-  // ACAS integration
-  acasBaseUrl: process.env.ACAS_BASE_URL || 'http://acas:3000',
+  // CORS configuration
+  corsOrigin: process.env.CORS_ORIGIN || '*',
+  
+  // ROO server configuration
   rooBaseUrl: process.env.ROO_BASE_URL || 'http://roo:8080/acas/api/v1',
   
-  // Logging configuration
-  logLevel: process.env.LOG_LEVEL || 'info',
+  // ACAS configuration
+  acasBaseUrl: process.env.ACAS_BASE_URL || 'http://acas:3000',
   
-  // Security settings
-  corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['*']
-};
-
-// Validate required configuration
-function validateConfig() {
-  const requiredVars = [
-    'acasBaseUrl',
-    'rooBaseUrl'
-  ];
+  // OpenAI configuration
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo',
   
-  const missingVars = requiredVars.filter(varName => !config[varName]);
+  // Authentication tokens (for development)
+  apiTokens: {
+    'cron-job-token': {
+      name: 'File Processing Cron Job',
+      roles: ['ROLE_FILE_PROCESSOR']
+    }
+  },
   
-  if (missingVars.length > 0) {
-    console.warn(`Warning: Missing required configuration: ${missingVars.join(', ')}`);
+  // File upload configuration
+  uploads: {
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
+    maxFiles: parseInt(process.env.MAX_FILES) || 5
   }
-}
-
-// Run validation
-validateConfig();
+};
 
 module.exports = config; 

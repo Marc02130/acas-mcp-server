@@ -39,8 +39,5 @@ dist
 build
 *.tsbuildinfo
 
-# Documentation
-docs
-*.md
-!README.md
-!API.md
+# SQL Schema for reference
+acas_backup.sql

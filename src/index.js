@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 // MCP Server main entry point
 const express = require('express');
 const cors = require('cors');
@@ -27,15 +30,6 @@ app.use(express.json({ limit: '50mb' })); // Parse JSON bodies with increased li
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 app.use(morgan('combined')); // HTTP request logging
 
-// Basic route for server health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
 // Root route
 app.get('/', (req, res) => {
   res.json({
@@ -45,13 +39,36 @@ app.get('/', (req, res) => {
   });
 });
 
+// Basic route for server health check (legacy path, keep for compatibility)
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// API v1 routes
+const apiV1Router = express.Router();
+
+// Health check (v1)
+apiV1Router.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: 'v1'
+  });
+});
+
 // Auth routes
-app.use('/api/auth', authRoutes);
+apiV1Router.use('/auth', authRoutes);
 
 // Process routes
-app.use('/api/process', processRoutes);
+apiV1Router.use('/process', processRoutes);
 
-// Routes will be added here
+// Mount the v1 router
+app.use('/api/v1', apiV1Router);
 
 // Handle 404 errors for unmatched routes
 app.use(notFoundHandler);

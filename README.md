@@ -1,80 +1,122 @@
 # MCP Server Overview
 
-The Model Context Protocol (MCP) server is a lightweight, Node.js-based backend system designed to connect AI models with external data sources, tools, and services. It acts as a secure and standardized bridge, enabling AI applications to efficiently access resources and perform tasks.
+The Microchemistry Processing (MCP) server is a lightweight, Node.js-based backend system designed to process experimental data and generate ISA-Tab files for import into the ACAS (Assay Capture and Analysis System).
 
 ## Key Features
 
-- **Resource Access**: Exposes files, databases, and other resources via unique URIs.
-- **Tool Invocation**: Provides executable functions for AI models to trigger specific operations.
-- **Prompt Templates**: Supplies structured instructions for consistent AI inputs.
-- **Secure Authentication**: Manages credentials through environment variables for enhanced security.
-- **Scalability**: Leverages Node.js for efficient handling of concurrent requests.
+- **File Upload**: Securely upload raw experimental data in various formats (CSV, Excel, etc.)
+- **OpenAI Processing**: Uses OpenAI to analyze raw data and generate ISA-Tab files
+- **Job Management**: Track the status and results of data processing jobs
+- **ACAS Integration**: Seamless integration with the ACAS ecosystem
 
 ## Technologies
 
-- **Node.js**: Powers the core runtime.
-- **Express.js**: Handles API routing and middleware.
-- **JSON-RPC 2.0**: Ensures structured communication.
-- **OAuth 2.1**: Optional framework for secure access control.
-
-## Integration
-
-The MCP server integrates seamlessly with the Assay Capture and Analysis System (ACAS), utilizing the ACAS roo-server for database interactions to maintain schema consistency and streamline functionality.
+- **Node.js**: Powers the core runtime
+- **Express.js**: Handles API routing and middleware
+- **OpenAI API**: Provides AI capabilities for data processing
+- **Multer**: Manages file uploads
+- **JSON Web Tokens**: Handles authentication
 
 ## Deployment
 
-- Deployed as a container, configured to work with ACAS containers.
-- Uses environment variables for flexible and secure configuration.
+- Deployed as a container, configured to work with ACAS containers
+- Uses environment variables for flexible and secure configuration
+- Shares the ACAS filestore volume for seamless file access
 
-## File Monitoring & Processing
+## Configuration
 
-The MCP server includes a file monitoring script (`scripts/upload-new-files.js`) that can be used to watch directories for new files and automatically process them:
+### Environment Variables
 
-### How It Works
+The MCP server requires the following environment variables:
 
-1. The script scans a specified directory for new files
-2. Detected files are read, encoded, and sent to the MCP server for processing
-3. Processed files are marked (with a `.processed` extension) to avoid reprocessing
-4. Results are stored in the MCP server and can be accessed via API
+- `OPENAI_API_KEY`: Your OpenAI API key for generating ISA-Tab files
+- `OPENAI_MODEL`: The OpenAI model to use (default: "gpt-4o-mini")
+- `PORT`: The port to run the server on (default: 3002)
+- `ACAS_BASE_URL`: URL of the ACAS server (default: http://acas:3000)
+- `ROO_BASE_URL`: URL of the ROO server (default: http://roo:8080/acas/api/v1)
 
-### Configuration
+### Setting Up Environment Variables
 
-The script can be configured using environment variables:
+#### Development
 
-- `WATCH_DIR`: Directory to monitor for new files (default: '/path/to/raw/data/directory')
-- `MCP_URL`: URL of the MCP server API (default: 'http://mcp:3002/api')
-- `API_TOKEN`: Authentication token for MCP server (default: 'cron-job-token')
-- `PROCESSED_MARKER`: Extension used to mark processed files (default: '.processed')
+For local development, create a `.env` file in the root directory with these variables:
 
-### Setting Up as a Cron Job
+```
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
 
-1. Make the script executable:
-   ```bash
-   chmod +x scripts/upload-new-files.js
-   ```
+#### Production/Docker Deployment
 
-2. Create a cron job to run the script at regular intervals:
-   ```bash
-   # Edit crontab
-   crontab -e
+When using Docker, you should pass environment variables securely:
 
-   # Add a line to run every 5 minutes
-   */5 * * * * cd /path/to/mcp-server && ./scripts/upload-new-files.js >> /var/log/mcp-upload.log 2>&1
-   ```
+1. **Export sensitive API keys in your shell before building/running:**
 
-3. Configure environment variables by creating a `.env` file or setting them in the cron job:
-   ```bash
-   */5 * * * * export WATCH_DIR=/data/raw_files; export MCP_URL=http://localhost:3002/api; cd /path/to/mcp-server && ./scripts/upload-new-files.js >> /var/log/mcp-upload.log 2>&1
-   ```
+```bash
+# Export the API key (sensitive information)
+export OPENAI_API_KEY="your_api_key_here"
 
-## Important Notes
+# Build and run with the variables
+docker compose build
+docker compose up -d
+```
 
-- Verify permissions for resource and tool access.
-- Keep dependencies updated to address security and compatibility.
-- Monitor performance and logs for optimal operation.
+2. **Use docker-compose.yml for non-sensitive environment variables:**
 
-This server is ideal for developers building AI-driven applications that require robust, secure, and scalable integration with external systems.
+```yaml
+services:
+  mcp:
+    build:
+      context: ../mcp-server
+      args:
+        OPENAI_API_KEY: ${OPENAI_API_KEY}
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4o-mini  # Non-sensitive, can be directly in docker-compose.yml
+```
 
+> **Security Note**: Never commit API keys to version control. Always use environment variables
+> or secure secret management systems for sensitive information in production environments.
+
+## API Usage
+
+The MCP server exposes a RESTful API for file processing:
+
+1. **Upload files**: POST to `/api/v1/process/upload` with multipart form data
+2. **Check job status**: GET `/api/v1/process/jobs/{jobId}`
+
+See the [API Documentation](./API.md) for detailed information.
+
+## Development
+
+To set up a development environment:
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a `.env` file with the required environment variables
+4. Start the server: `npm run dev`
+
+## Docker
+
+The MCP server is designed to run as a container alongside other ACAS components:
+
+```bash
+docker compose build mcp
+docker compose up -d mcp
+```
+
+## File Storage
+
+The MCP server uses the shared ACAS filestore volume for:
+- Storing uploaded files
+- Generating ISA-Tab output files
+- Providing access to files for other ACAS components
+
+## Security
+
+- Files are validated for size and type
+- Authentication is required for all API endpoints
+- Environment variables are used for sensitive configuration
 
 # Node Package Manager
 Jest depends on old versions in-flight and glob. lru-cache and glob are installed for general use. Errors will be thrown for in-flight and glob due to jest.
