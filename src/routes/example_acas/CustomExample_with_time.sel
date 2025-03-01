@@ -1,0 +1,14 @@
+Experiment Meta Data,,,,,,
+Format,Custom Example,,,,,
+Protocol Name,Mouse Strength,,,,,
+Experiment Name,2013-08-24 main time,,,,,
+Scientist,jmcneil,,,,,
+Notebook,MM-234,,,,,
+Page,12,,,,,
+Assay Date,2013-08-24,,,,,
+,,,,,,
+Raw Data,,,,,,
+Datatype,Number,Number,Number,Text,Text,Number
+Corporate Batch ID,Dose (mL/g),Weight (g),Force (N) {3 hr},Mouse Name,Mouse's Favorite Color,Force (N) {9 hr}
+CMPD-0000001-01,50.0,91.9,2.3,bob,blue,10.2
+CMPD-0000002-01,50.0,78.4,5.4,sally,yellow,20.1

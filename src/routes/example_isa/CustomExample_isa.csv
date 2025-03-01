@@ -1,0 +1,3 @@
+Corporate Batch ID,Dose (mL/g),Weight (g),Force (N),Mouse Name,Mouse's Favorite Color,Assay Date,Format,Protocol Name,Experiment Name,Scientist,Notebook,Page
+CMPD-0000001-01,50.0,91.9,2.3,bob,blue,2013-08-24,Custom Example,Mouse Strength,2013-08-24 main,jmcneil,MM-234,12
+CMPD-0000002-01,50.0,78.4,5.4,sally,yellow,2013-08-24,Custom Example,Mouse Strength,2013-08-24 main,jmcneil,MM-234,12

@@ -1,0 +1,14 @@
+Experiment Meta Data,,,
+Format,Generic,,
+Protocol Name,CYP 3A4 Inhibition,,
+Experiment Name,Test Experiment 1,,
+Scientist,jmcneil,,
+Notebook,911,,
+Page,12,,
+Assay Date,2012-07-12,,
+,,,
+Calculated Results,,,
+Datatype,Number,Number,Number
+Corporate Batch ID,Inhibition (%) [10 uM],Inhibition (%) [30 uM],Inhibition (%) [100 uM]
+CMPD-0000051-01,10,45,80
+CMPD-0000052-01,40,70,retest

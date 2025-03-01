@@ -1,0 +1,8 @@
+Corporate Batch ID,solubility (ug/mL),log solubility (ug/mL),Assay Comment,Format,Protocol Name,Experiment Name,Scientist,Notebook,Page,Assay Date
+CMPD-0000001-01,7.68,0.885446248191887,Great Value,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000002-01,3.14,0.497317152638739,Weak Value,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000003-01,fail,fail,,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000004-01,3.97,0.598763775450573,,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000005-01,>41,>1.61278385671974,,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000006-01,>44,>1.64345267648619,,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08
+CMPD-0000007-01,>48,>1.68124123737559,,Generic,PAMPA Buffer A,Buffer A Test 2,jmcneil,JAM-000033,6,2013-07-08

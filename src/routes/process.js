@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const openaiService = require('../services/openai-service');
 const { getAcasFilePath } = require('../utils/file-utils');
+const acasService = require('../services/acas-service');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -142,6 +143,81 @@ router.get('/jobs/:jobId', authenticate(), async (req, res) => {
   res.json(jobs[jobId]);
 });
 
+// Submit a processed job to ACAS GenericDataParser
+/**
+ * Submit a processed job to ACAS GenericDataParser
+ * POST /api/v1/process/submit-to-acas/:jobId
+ */
+router.post('/submit-to-acas/:jobId', authenticate(), async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { dryRun = true } = req.body;
+    
+    if (!jobs[jobId]) {
+      return res.status(404).json({
+        error: true,
+        message: `Job ${jobId} not found`
+      });
+    }
+    
+    const job = jobs[jobId];
+    
+    // Verify job is completed and has ISA-Tab results
+    if (job.status !== 'completed') {
+      return res.status(400).json({
+        error: true,
+        message: `Job ${jobId} is not in completed state (current: ${job.status})`
+      });
+    }
+    
+    if (!job.result || !job.result.isaTabFiles || job.result.isaTabFiles.length === 0) {
+      return res.status(400).json({
+        error: true,
+        message: `Job ${jobId} has no ISA-Tab files to submit`
+      });
+    }
+    
+    // Update job status
+    job.status = dryRun ? 'validating' : 'submitting';
+    
+    // Submit to ACAS
+    const acasResult = await acasService.submitToGenericDataParser(job, dryRun);
+    
+    // Update job with ACAS result
+    if (acasResult.success) {
+      job.acasSubmission = {
+        submittedAt: new Date().toISOString(),
+        dryRun: acasResult.dryRun,
+        experimentCode: acasResult.experimentCode,
+        htmlSummary: acasResult.htmlSummary
+      };
+      
+      job.status = dryRun ? 'validated' : 'submitted';
+    } else {
+      job.acasSubmission = {
+        submittedAt: new Date().toISOString(),
+        dryRun: acasResult.dryRun,
+        error: acasResult.error
+      };
+      
+      job.status = 'failed';
+    }
+    
+    res.json({
+      jobId,
+      status: job.status,
+      acasSubmission: job.acasSubmission
+    });
+  } catch (error) {
+    console.error('Error submitting to ACAS:', error);
+    res.status(500).json({
+      error: true,
+      message: 'Error submitting to ACAS',
+      details: error.message
+    });
+  }
+});
+
 // Process job asynchronously
 async function processJob(jobId) {
   try {
@@ -164,6 +240,12 @@ async function processJob(jobId) {
         // Store raw response for debugging
         rawResponse: result.rawResponse
       };
+      
+      // If auto-submit is requested, submit to ACAS
+      if (jobs[jobId].metadata && jobs[jobId].metadata.autoSubmitToAcas) {
+        const dryRun = jobs[jobId].metadata.acasDryRun !== false; // Default to dry run
+        await acasService.submitToGenericDataParser(jobs[jobId], dryRun);
+      }
     } else {
       throw new Error(result.error || 'Unknown error during ISA-Tab generation');
     }
@@ -176,5 +258,25 @@ async function processJob(jobId) {
     jobs[jobId].completedAt = new Date().toISOString();
   }
 }
+
+// Add this new endpoint for testing ACAS authentication
+/**
+ * Test ACAS authentication
+ * GET /api/v1/process/test-acas-auth
+ */
+router.get('/test-acas-auth', authenticate(), async (req, res) => {
+  try {
+    console.log('Testing ACAS authentication...');
+    const results = await acasService.testAcasAuthentication();
+    res.json(results);
+  } catch (error) {
+    console.error('Error testing ACAS authentication:', error);
+    res.status(500).json({
+      error: true,
+      message: 'Error testing ACAS authentication',
+      details: error.message
+    });
+  }
+});
 
 module.exports = router; 

@@ -15,6 +15,7 @@ const config = {
   
   // ACAS configuration
   acasBaseUrl: process.env.ACAS_BASE_URL || 'http://acas:3000',
+  acasNodeApiUrl: process.env.ACAS_NODEAPI_URL || 'http://acas:3001',
   
   // OpenAI configuration
   openaiApiKey: process.env.OPENAI_API_KEY,
@@ -32,7 +33,12 @@ const config = {
   uploads: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
     maxFiles: parseInt(process.env.MAX_FILES) || 5
-  }
+  },
+
+  // ACAS authentication settings
+  acasUsername: process.env.ACAS_USERNAME || 'admin',
+  acasPassword: process.env.ACAS_PASSWORD || 'admin',
+  acasApiToken: process.env.ACAS_API_TOKEN || 'cron-job-token'
 };
 
 module.exports = config; 
